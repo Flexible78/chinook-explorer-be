@@ -1,6 +1,7 @@
 import express from "express";
 import customersRouter from "./routes/customersRouter.js";
-// import accountsRouter from "./routes/accountsRouter.js"; // Вернем, когда перенесем логику авторизации
+import albumsRouter from "./routes/albumsRouter.js";
+import playlistsRouter from "./routes/playlistsRouter.js";
 
 const app = express();
 
@@ -8,7 +9,7 @@ app.use(express.json()); // Чтобы сервер понимал JSON-запр
 
 // Наши главные роуты (по ТЗ)
 app.use("/customers", customersRouter);
-// app.use("/albums", albumsRouter); // Добавим прямо сейчас
-// app.use("/playlists", playlistsRouter); // Добавим прямо сейчас
+app.use("/albums", albumsRouter);
+app.use("/playlists", playlistsRouter);
 
 export default app;
