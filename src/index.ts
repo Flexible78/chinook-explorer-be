@@ -1,8 +1,8 @@
-import "dotenv/config";
 import app from "./controller/app.js";
+import logger from "./logger.js";
 
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-app.listen(port, () => {
-    console.log(`🚀 Сервер Chinook Explorer запущен на порту ${port}`);
+app.listen(PORT, () => {
+    logger.info(`Server started on port ${PORT}`);
 });

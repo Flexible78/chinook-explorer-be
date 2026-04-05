@@ -1,29 +1,27 @@
 import express, { type Request, type Response } from "express";
 import db from "../../db.js";
+import logger from "../../logger.js";
 
 const playlistsRouter = express.Router();
 
 playlistsRouter.get("/", async (req: Request, res: Response) => {
     try {
-        console.log("Запрос к БД: получаем плейлисты..."); // Исправили лог
+        logger.info("DB request: fetching playlists...");
 
-        // Добавили кавычки "playlist", чтобы Knex понял, что это название таблицы
         const playlists = await db("playlist").select("*");
 
-        // Отправляем готовый JSON на фронтенд
         res.json(playlists);
     } catch (error) {
-        console.error("❌ Ошибка при получении плейлистов:", error); // Исправили лог
-        res.status(500).json({ error: "Внутренняя ошибка сервера" });
+        logger.error(error, "Error fetching playlists");
+        res.status(500).json({ error: "Internal server error" });
     }
 });
-// Маршрут для получения треков конкретного плейлиста по клику на "Details"
+// Route to get tracks for a specific playlist on "Details" click
 playlistsRouter.get("/:id/tracks", async (req: Request, res: Response) => {
     try {
         const playlistId = req.params.id;
-        console.log(`Запрос к БД: получаем треки для плейлиста ${playlistId}...`);
+        logger.info(`DB request: fetching tracks for playlist ${playlistId}...`);
 
-        // Здесь мы начинаем с таблицы-посредника playlist_track
         const tracks = await db("playlist_track")
             .join("track", "playlist_track.track_id", "=", "track.track_id")
             .join("genre", "track.genre_id", "=", "genre.genre_id")
@@ -37,8 +35,8 @@ playlistsRouter.get("/:id/tracks", async (req: Request, res: Response) => {
 
         res.json(tracks);
     } catch (error) {
-        console.error(`❌ Ошибка при получении треков плейлиста ${req.params.id}:`, error);
-        res.status(500).json({ error: "Внутренняя ошибка сервера" });
+        logger.error(error, `Error fetching tracks for playlist ${req.params.id}`);
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 export default playlistsRouter;

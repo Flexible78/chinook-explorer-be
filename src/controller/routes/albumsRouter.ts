@@ -1,38 +1,39 @@
 import express, { type Request, type Response } from "express";
 import db from "../../db.js";
+import logger from "../../logger.js";
 
 const albumsRouter = express.Router();
 
-// Маршрут для получения всех альбомов (с именами артистов по ТЗ)
+// Route to get all albums (with artist names per requirements)
 albumsRouter.get("/", async (req: Request, res: Response) => {
     try {
-        console.log("Запрос к БД: получаем альбомы с артистами...");
+        logger.info("DB request: fetching albums with artists...");
 
-        // Магия JOIN: склеиваем Альбомы и Артистов по их ID
+        // JOIN magic: joining Albums and Artists by their ID
         const albums = await db("album")
             .join("artist", "album.artist_id", "=", "artist.artist_id")
             .select(
                 "album.album_id as id",
                 "album.title as albumName",
-                "artist.name as artistName"  // Берем имя артиста по ТЗ!
+                "artist.name as artistName"
             );
 
         res.json(albums);
     } catch (error) {
-        console.error("❌ Ошибка при получении альбомов:", error);
-        res.status(500).json({ error: "Внутренняя ошибка сервера" });
+        logger.error(error, "Error fetching albums");
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 albumsRouter.get("/:id/tracks", async (req: Request, res: Response) => {
     try {
         const albumId = req.params.id;
-        console.log(`Запрос к БД: получаем треки для альбома ${albumId}...`);
+        logger.info(`DB request: fetching tracks for album ${albumId}...`);
 
-        // Магия ТРОЙНОГО JOIN: собираем песню, жанр и формат файла
+        // TRIPLE JOIN magic: assembling track, genre and media type
         const tracks = await db("track")
             .join("genre", "track.genre_id", "=", "genre.genre_id")
             .join("media_type", "track.media_type_id", "=", "media_type.media_type_id")
-            .where("track.album_id", albumId) // Фильтруем: берем треки только нужного альбома
+            .where("track.album_id", albumId)
             .select(
                 "track.name as trackName",
                 "genre.name as genreName",
@@ -41,10 +42,10 @@ albumsRouter.get("/:id/tracks", async (req: Request, res: Response) => {
 
         res.json(tracks);
     } catch (error) {
-        console.error(`❌ Ошибка при получении треков альбома ${req.params.id}:`, error);
-        res.status(500).json({ error: "Внутренняя ошибка сервера" });
+        logger.error(error, `Error fetching tracks for album ${req.params.id}`);
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 
-// Экспортируем роутер, чтобы app.ts мог его использовать
+// Export router for use in app.ts
 export default albumsRouter;

@@ -1,37 +1,40 @@
-import express, {Request, Response} from "express"
-import { LoginData } from "../../models/LoginData.js";
-import { auth } from "../../middleware/auth.js";
-import accountingService from "../../service/AccountingServiceImpl.js";
-import { validation_create_account, validation_update_password, validation_login } 
-from "../../middleware/validation-middleware.js";
-import { Account } from "../../models/Account.js";
-import { PermissionError } from "../../errors/authErrors.js";
-const accountsRouter = express.Router()
-accountsRouter.post("/login", validation_login,
-     async (req: Request<{}, {}, LoginData>, res: Response) => {
-    const {username, password} = req.body;
-    const user = await accountingService.getToken(username, password)
-    res.json(user)
-})
-accountsRouter.post("/", auth(accountingService.accountAdminRole), validation_create_account,
- async (req: Request<{}, {}, Account>, res: Response) => {
-    res.statusCode = 204
-    const {username, password, role} = req.body
-    await accountingService.addAccount(username, password, role);
-    res.end()
-})
-accountsRouter.patch("/",auth(),validation_update_password, async (req: Request<{}, {}, LoginData>, res: Response) => {
-    if(req.username != req.body.username && req.role != accountingService.accountAdminRole) {
-        throw new PermissionError()
+import express, { type Request, type Response } from "express";
+import jwt from "jsonwebtoken";
+import logger from "../../logger.js";
+
+const accountsRouter = express.Router();
+
+const SECRET_KEY = process.env.JWT_SECRET || "pass21";
+
+const users = [
+    { email: "sale@test.com", password: "123", role: "SALE" },
+    { email: "user@test.com", password: "123", role: "USER" },
+    { email: "admin@test.com", password: "123", role: "SUPER_USER" }
+];
+
+accountsRouter.post("/login", (req: Request, res: Response) => {
+    try {
+        const { email, password } = req.body;
+        logger.info(`Login attempt for email: ${email}`);
+
+        const user = users.find(u => u.email === email && u.password === password);
+
+        if (!user) {
+            res.status(401).json({ error: "Invalid email or password" });
+            return;
+        }
+
+        const token = jwt.sign(
+            { email: user.email, role: user.role },
+            SECRET_KEY,
+            { expiresIn: "1h" }
+        );
+
+        res.json({ message: "Login successful", token, role: user.role });
+    } catch (error) {
+        logger.error(error, "Login error");
+        res.status(500).json({ error: "Internal server error" });
     }
-    res.statusCode = 204;
-    const {username, password} = req.body
-    await accountingService.updatePassword(username, password)
-    res.end()
-} )
-accountsRouter.delete("/:username", auth(accountingService.accountAdminRole), async (req: Request<{username: string}>, res: Response) => {
-    res.statusCode = 204
-    await accountingService.deleteAccount(req.params.username)
-    res.end()
-})
-export default accountsRouter
+});
+
+export default accountsRouter;
