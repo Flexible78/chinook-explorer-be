@@ -1,3 +1,4 @@
+import "dotenv/config";
 import app from "./controller/app.js";
 import logger from "./logger.js";
 
