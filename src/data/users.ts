@@ -2,14 +2,14 @@
 
 export type UserRole = "SUPER_USER" | "SALE" | "USER";
 
-export interface User {
+export interface Users {
     email: string;
     password: string;
     role: UserRole;
     name: string;
 }
 
-export const USERS: User[] = [
+export const USERS: Users[] = [
     {
         email: "admin@tel-ran.com",
         password: "123",
