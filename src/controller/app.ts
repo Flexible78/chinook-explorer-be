@@ -1,5 +1,6 @@
 import express from "express";
 import morgan from "morgan";
+import cors from "cors";
 import accountsRouter from "./routes/accountsRouter.js";
 import customersRouter from "./routes/customersRouter.js";
 import albumsRouter from "./routes/albumsRouter.js";
@@ -11,7 +12,7 @@ const app = express();
 
 app.use(morgan("dev"));
 app.use(express.json());
-
+app.use(cors())
 // Логин доступен всем без токена (иначе как его получить?)
 app.use("/accounts", accountsRouter);
 
