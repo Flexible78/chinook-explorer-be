@@ -1,10 +1,11 @@
 import express, { type Request, type Response } from "express";
 import jwt from "jsonwebtoken";
+import { getJwtSecret } from "../../config.js";
 import logger from "../../logger.js";
 import { USERS } from "../../data/users.js"; // <-- Импортируем нашу базу
 
 const accountsRouter = express.Router();
-const SECRET_KEY = process.env.JWT_SECRET || "pass21";
+const SECRET_KEY = getJwtSecret();
 
 accountsRouter.post("/login", (req: Request, res: Response) => {
     try {
