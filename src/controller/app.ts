@@ -5,20 +5,24 @@ import accountsRouter from "./routes/accountsRouter.js";
 import customersRouter from "./routes/customersRouter.js";
 import albumsRouter from "./routes/albumsRouter.js";
 import playlistsRouter from "./routes/playlistsRouter.js";
-// 1. Импортируем нашего охранника
+import invoicesRouter from "./routes/invoicesRouter.js";
 import { authorize } from "../middleware/auth.js";
 
 const app = express();
 
 app.use(morgan("dev"));
 app.use(express.json());
-app.use(cors())
-// Логин доступен всем без токена (иначе как его получить?)
+app.use(cors());
+
+// Публичные
 app.use("/accounts", accountsRouter);
 
-// 2. Ставим охранников по ТЗ
-app.use("/customers", authorize(["SALE"]), customersRouter);
-app.use("/albums", authorize(["USER"]), albumsRouter);
-app.use("/playlists", authorize(["USER"]), playlistsRouter);
+// Защищенные
+app.use("/customers", authorize(["SALE", "SUPER_USER"]), customersRouter);
+app.use("/invoices", authorize(["SALE", "SUPER_USER"]), invoicesRouter);
+app.use("/albums", authorize(["USER", "SUPER_USER"]), albumsRouter);
+app.use("/playlists", authorize(["USER", "SUPER_USER"]), playlistsRouter);
+
+app.get("/ping", (req, res) => res.send("pong"));
 
 export default app;
