@@ -1,7 +1,7 @@
 import knex from "knex";
 import "dotenv/config";
 
-// Создаем подключение, используя нашу победную строку и SSL-пропуск
+// Create the database connection using the configured connection string and SSL override
 const db = knex({
     client: "pg",
     connection: {

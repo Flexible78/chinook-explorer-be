@@ -2,7 +2,7 @@ import express, { type Request, type Response } from "express";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../config.js";
 import logger from "../../logger.js";
-import { USERS } from "../../data/users.js"; // <-- Импортируем нашу базу
+import { USERS } from "../../data/users.js"; // In-memory user store
 
 const accountsRouter = express.Router();
 const SECRET_KEY = getJwtSecret();
@@ -12,7 +12,7 @@ accountsRouter.post("/login", (req: Request, res: Response) => {
         const { email, password } = req.body;
         logger.info(`Login attempt for email: ${email}`);
 
-        // Ищем в нашей новой "базе"
+        // Look up the user in the in-memory store
         const user = USERS.find(u => u.email === email && u.password === password);
 
         if (!user) {

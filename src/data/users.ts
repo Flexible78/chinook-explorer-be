@@ -1,5 +1,3 @@
-// src/data/users.ts
-
 export type UserRole = "SUPER_USER" | "SALE" | "USER";
 
 export interface Users {
@@ -28,7 +26,7 @@ export const USERS: Users[] = [
         role: "USER",
         name: "Regular User"
     },
-    // Можешь добавить тестовых юзеров для проверки ошибок доступа
+    // Add test users here if you need to verify access-control scenarios
     {
         email: "test@test.com",
         password: "123",

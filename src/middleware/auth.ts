@@ -5,12 +5,12 @@ import logger from "../logger.js";
 
 const SECRET_KEY = getJwtSecret();
 
-// Расширяем стандартный Request, чтобы TypeScript разрешил нам сохранить туда данные юзера
+// Extend the request type so decoded user data can be attached safely
 export interface AuthRequest extends Request {
     user?: string | jwt.JwtPayload;
 }
 
-// Наша функция-охранник
+// Authorization guard factory
 export const authorize = (allowedRoles: string[]) => {
     return (req: AuthRequest, res: Response, next: NextFunction): void => {
         try {

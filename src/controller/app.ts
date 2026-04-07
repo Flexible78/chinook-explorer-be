@@ -14,10 +14,10 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(cors());
 
-// Публичные
+// Public routes
 app.use("/accounts", accountsRouter);
 
-// Защищенные
+// Protected routes
 app.use("/customers", authorize(["SALE", "SUPER_USER"]), customersRouter);
 app.use("/invoices", authorize(["SALE", "SUPER_USER"]), invoicesRouter);
 app.use("/albums", authorize(["USER", "SUPER_USER"]), albumsRouter);
