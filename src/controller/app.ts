@@ -5,24 +5,26 @@ import accountsRouter from "./routes/accountsRouter.js";
 import customersRouter from "./routes/customersRouter.js";
 import albumsRouter from "./routes/albumsRouter.js";
 import playlistsRouter from "./routes/playlistsRouter.js";
-import invoicesRouter from "./routes/invoicesRouter.js";
-import { authorize } from "../middleware/auth.js";
+import errorsHandler from "../middleware/errorsHandling.js";
+import { auth, security_context } from "../middleware/auth.js";
+import accountingService from "../services/AccountingServiceImpl.js";
 
 const app = express();
 
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cors());
+app.use(security_context);
 
 // Public routes
 app.use("/accounts", accountsRouter);
 
 // Protected routes
-app.use("/customers", authorize(["SALE", "SUPER_USER"]), customersRouter);
-app.use("/invoices", authorize(["SALE", "SUPER_USER"]), invoicesRouter);
-app.use("/albums", authorize(["USER", "SUPER_USER"]), albumsRouter);
-app.use("/playlists", authorize(["USER", "SUPER_USER"]), playlistsRouter);
+app.use("/customers", auth("SALE", accountingService.accountAdminRole), customersRouter);
+app.use("/albums", auth("USER", accountingService.accountAdminRole), albumsRouter);
+app.use("/playlists", auth("USER", accountingService.accountAdminRole), playlistsRouter);
 
 app.get("/ping", (req, res) => res.send("pong"));
+app.use(errorsHandler);
 
 export default app;

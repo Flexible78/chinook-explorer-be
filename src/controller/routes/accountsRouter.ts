@@ -1,43 +1,69 @@
 import express, { type Request, type Response } from "express";
-import jwt from "jsonwebtoken";
-import { getJwtSecret } from "../../config.js";
-import logger from "../../logger.js";
-import { USERS } from "../../data/users.js"; // In-memory user store
+import ServiceError from "../../errors/ServiceError.js";
+import { PermissionError } from "../../errors/authErrors.js";
+import { auth } from "../../middleware/auth.js";
+import type { Account, UserRole } from "../../models/Account.js";
+import { isUserRole } from "../../models/Account.js";
+import type { LoginData } from "../../models/LoginData.js";
+import accountingService from "../../services/AccountingServiceImpl.js";
 
 const accountsRouter = express.Router();
-const SECRET_KEY = getJwtSecret();
 
-accountsRouter.post("/login", (req: Request, res: Response) => {
-    try {
-        const { email, password } = req.body;
-        logger.info(`Login attempt for email: ${email}`);
+type LoginPayload = Partial<LoginData> & { email?: string };
+type CreateAccountPayload = Partial<Account> & { email?: string };
 
-        // Look up the user in the in-memory store
-        const user = USERS.find(u => u.email === email && u.password === password);
+function getUsername(payload: { username?: string; email?: string }): string {
+    return payload.username ?? payload.email ?? "";
+}
 
-        if (!user) {
-            logger.warn(`Failed login for: ${email}`);
-            res.status(401).json({ error: "Invalid email or password" });
-            return;
-        }
+accountsRouter.post("/login", async (req: Request<{}, {}, LoginPayload>, res: Response) => {
+    const username = getUsername(req.body);
+    const password = req.body.password ?? "";
 
-        const token = jwt.sign(
-            { email: user.email, role: user.role },
-            SECRET_KEY,
-            { expiresIn: "1h" }
-        );
-
-        logger.info(`User logged in: ${user.email} (Role: ${user.role})`);
-        res.json({
-            message: "Login successful",
-            token,
-            role: user.role,
-            userName: user.name
-        });
-    } catch (error) {
-        logger.error(error, "Login error");
-        res.status(500).json({ error: "Internal server error" });
+    if (!username || !password) {
+        throw new ServiceError(400, "username and password are required");
     }
+
+    const user = await accountingService.getToken(username, password);
+    res.json(user);
+});
+
+accountsRouter.post("/", auth(accountingService.accountAdminRole), async (req: Request<{}, {}, CreateAccountPayload>, res: Response) => {
+    const username = getUsername(req.body);
+    const password = req.body.password ?? "";
+    const role = req.body.role;
+
+    if (!username || !password || !role) {
+        throw new ServiceError(400, "username, password and role are required");
+    }
+
+    if (!isUserRole(role)) {
+        throw new ServiceError(400, "invalid role");
+    }
+
+    await accountingService.addAccount(username, password, role as UserRole, req.body.name);
+    res.status(204).end();
+});
+
+accountsRouter.patch("/", auth(), async (req: Request<{}, {}, LoginPayload>, res: Response) => {
+    const username = getUsername(req.body);
+    const password = req.body.password ?? "";
+
+    if (!username || !password) {
+        throw new ServiceError(400, "username and password are required");
+    }
+
+    if (req.username !== username && req.role !== accountingService.accountAdminRole) {
+        throw new PermissionError();
+    }
+
+    await accountingService.updatePassword(username, password);
+    res.status(204).end();
+});
+
+accountsRouter.delete("/:username", auth(accountingService.accountAdminRole), async (req: Request<{ username: string }>, res: Response) => {
+    await accountingService.deleteAccount(req.params.username);
+    res.status(204).end();
 });
 
 export default accountsRouter;

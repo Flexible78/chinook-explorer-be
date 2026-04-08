@@ -6,9 +6,12 @@ const playlistsRouter = express.Router();
 
 playlistsRouter.get("/", async (req: Request, res: Response) => {
     try {
-        logger.info("DB request: fetching playlists...");
+        logger.info("[DB] Fetching playlists...");
 
-        const playlists = await db("playlist").select("*");
+        const playlists = await db("playlist").select(
+            "playlist_id as id",
+            "name",
+        );
 
         res.json(playlists);
     } catch (error) {
@@ -16,11 +19,11 @@ playlistsRouter.get("/", async (req: Request, res: Response) => {
         res.status(500).json({ error: "Internal server error" });
     }
 });
-// Route to get tracks for a specific playlist on "Details" click
+
 playlistsRouter.get("/:id/tracks", async (req: Request, res: Response) => {
     try {
         const playlistId = req.params.id;
-        logger.info(`DB request: fetching tracks for playlist ${playlistId}...`);
+        logger.info(`[DB] Fetching tracks for playlist ${playlistId}...`);
 
         const tracks = await db("playlist_track")
             .join("track", "playlist_track.track_id", "=", "track.track_id")
@@ -30,7 +33,7 @@ playlistsRouter.get("/:id/tracks", async (req: Request, res: Response) => {
             .select(
                 "track.name as trackName",
                 "genre.name as genreName",
-                "media_type.name as mediaTypeName"
+                "media_type.name as mediaTypeName",
             );
 
         res.json(tracks);
@@ -39,4 +42,5 @@ playlistsRouter.get("/:id/tracks", async (req: Request, res: Response) => {
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
 export default playlistsRouter;

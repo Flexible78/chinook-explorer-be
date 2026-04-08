@@ -1,47 +1,72 @@
-import express, { type Request, type Response, type NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { getJwtSecret } from "../config.js";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
+import type { JwtPayload } from "jsonwebtoken";
+import {
+    AuthenticationError,
+    JwtError,
+    PermissionError,
+} from "../errors/authErrors.js";
 import logger from "../logger.js";
+import JwtUtil from "../utils/JwtUtil.js";
 
-const SECRET_KEY = getJwtSecret();
+const BEARER = "Bearer ";
 
-// Extend the request type so decoded user data can be attached safely
-export interface AuthRequest extends Request {
-    user?: string | jwt.JwtPayload;
+export const security_context: RequestHandler = (req, _, next) => {
+    const authHeader = req.header("Authorization");
+    if (authHeader && authHeader.startsWith(BEARER)) {
+        const token = authHeader.slice(BEARER.length);
+        const { username, role, auth_error } = parseToken(token);
+        req.username = username;
+        req.role = role;
+        req.auth_error = auth_error;
+        logger.debug(`security_context attached ${JSON.stringify({ username, role, auth_error })}`);
+    } else {
+        req.username = null;
+        req.role = null;
+        req.auth_error = null;
+        logger.debug(`security_context: no token for ${req.method} ${req.originalUrl}`);
+    }
+    next();
+};
+
+function parseToken(token: string): {
+    username: string | null;
+    role: string | null;
+    auth_error: string | null;
+} {
+    let payload = { sub: null, role: null } as JwtPayload & {
+        role: string | null;
+        sub: string | null;
+    };
+    let auth_error: string | null = null;
+
+    try {
+        payload = JwtUtil.verify(token) as typeof payload;
+    } catch (error) {
+        const jwtError = error as Error;
+        auth_error = `${jwtError.name}: ${jwtError.message}`;
+    }
+
+    return {
+        username: payload.sub,
+        role: typeof payload.role === "string" ? payload.role : null,
+        auth_error,
+    };
 }
 
-// Authorization guard factory
-export const authorize = (allowedRoles: string[]) => {
-    return (req: AuthRequest, res: Response, next: NextFunction): void => {
-        try {
-            const authHeader = req.headers.authorization;
-            if (!authHeader || !authHeader.startsWith("Bearer ")) {
-                logger.warn("Access denied: No token provided");
-                res.status(401).json({ error: "Unauthorized: No token provided" });
-                return;
-            }
-
-            const token = authHeader.split(" ")[1];
-            if (!token) {
-                logger.warn("Access denied: Malformed authorization header");
-                res.status(401).json({ error: "Unauthorized: Invalid token format" });
-                return;
-            }
-
-            const decoded = jwt.verify(token, SECRET_KEY) as jwt.JwtPayload;
-            req.user = decoded;
-
-            const userRole = decoded.role;
-
-            if (typeof userRole === "string" && (userRole === "SUPER_USER" || allowedRoles.includes(userRole))) {
-                next();
-            } else {
-                logger.warn(`Access denied: Role ${userRole} is not allowed`);
-                res.status(403).json({ error: "Forbidden: Access denied for your role" });
-            }
-        } catch (error) {
-            logger.error(error, "Invalid token");
-            res.status(401).json({ error: "Unauthorized: Invalid token" });
+export function auth(...roles: string[]): RequestHandler {
+    return (req: Request, _: Response, next: NextFunction) => {
+        if (req.auth_error) {
+            throw new JwtError(req.auth_error);
         }
+
+        if (!req.username) {
+            throw new AuthenticationError();
+        }
+
+        if (!req.role || (roles.length !== 0 && !roles.includes(req.role))) {
+            throw new PermissionError();
+        }
+
+        next();
     };
-};
+}
