@@ -1,5 +1,6 @@
 import type { ParsedQs } from "qs";
 import type { Response } from "express";
+import type { PaginationDto } from "../dto/api.js";
 import ServiceError from "../errors/ServiceError.js";
 
 const DEFAULT_PAGE = 1;
@@ -53,6 +54,23 @@ export function setPaginationHeaders(
     res.setHeader("X-Page", pagination.page.toString());
     res.setHeader("X-Limit", pagination.limit.toString());
     res.setHeader("X-Total-Pages", totalPages.toString());
+}
+
+export function buildPaginationDto(
+    totalCount: number,
+    itemCount: number,
+    pagination: Pagination | null,
+): PaginationDto {
+    const page = pagination?.page ?? DEFAULT_PAGE;
+    const limit = pagination?.limit ?? Math.max(itemCount, 1);
+    const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+
+    return {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+    };
 }
 
 export function parseCount(value: unknown): number {

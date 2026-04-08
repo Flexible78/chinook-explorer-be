@@ -21,7 +21,9 @@ export function sendPaginatedData<T>(
     status = 200,
 ) {
     const paginationDto = buildPaginationDto(totalCount, data.length, pagination);
-    setPaginationHeaders(res, paginationDto);
+    if (pagination) {
+        setPaginationHeaders(res, totalCount, pagination);
+    }
     const body: PaginatedApiResponse<T> = {
         data,
         pagination: paginationDto,
