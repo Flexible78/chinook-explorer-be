@@ -13,7 +13,9 @@ const app = express();
 
 app.use(morgan("dev"));
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    exposedHeaders: ["X-Total-Count", "X-Page", "X-Limit", "X-Total-Pages"],
+}));
 app.use(security_context);
 
 // Public routes
