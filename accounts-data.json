@@ -1,0 +1,20 @@
+[
+  {
+    "username": "sale@tel-ran.com",
+    "password": "$2b$10$zlyGLvX.vXe0cIZJx1D3w.TlvXJIgdmIklJYQKkbz.Remw/JLAgwK",
+    "role": "SALE",
+    "name": "Sales Representative"
+  },
+  {
+    "username": "user@tel-ran.com",
+    "password": "$2b$10$N/fTgD9Vl2ltaTMusznGceG/4/G3QKXQyB/.0QrYhs.jKw1BqrDQ6",
+    "role": "USER",
+    "name": "Regular User"
+  },
+  {
+    "username": "test@test.com",
+    "password": "$2b$10$oagwsl3/Vx574wcbdW70KO5BBVV9l/WwiybohdotKI5aQCEUpdpSK",
+    "role": "USER",
+    "name": "Test User"
+  }
+]
