@@ -131,6 +131,7 @@ customersRouter.get("/:customerId/invoices/:invoiceId/tracks", async (req: Reque
                 "track.name as trackName",
                 "genre.name as genreName",
                 "media_type.name as mediaTypeName",
+                "invoice_line.unit_price as unitPrice",
             );
 
         if (pagination) {
